@@ -1,9 +1,9 @@
 import argparse
 import os
 import json
-from block_processor import process_block
-import file_handler
-from metadata_manager import save_metadata
+from processor_module.block_processor import process_block
+from processor_module.file_handler import read_tsv, write_jsonl
+from processor_module.metadata_manager import save_metadata
 from datetime import datetime
 
 def read_previous_metadata(output_folder, datetime_from_previous_file):
@@ -14,7 +14,7 @@ def read_previous_metadata(output_folder, datetime_from_previous_file):
         return None
 
 def main(args):
-    headers, lines = file_handler.read_tsv(args.input)
+    headers, lines = read_tsv(args.input)
     json_data_list = []
     previous_block = None
 
@@ -27,7 +27,7 @@ def main(args):
     previous_metadata = read_previous_metadata(args.output, datetime_from_previous_file)
     output_filename = os.path.join(args.output, f"blocks-list-{datetime_from_previous_file}.jsonl")
 
-    file_handler.write_jsonl(output_filename, json_data_list)
+    write_jsonl(output_filename, json_data_list)
     save_metadata(json_data_list, args.output, datetime_from_previous_file, previous_metadata)
 
 if __name__ == '__main__':

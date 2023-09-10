@@ -1,6 +1,12 @@
+## Download Blocks
+The following CLI will download a file, every 10 seconds
+
+```bash
+python download_blocks.py 20090115
+```
 ## Process Blocks
 The following CLI will translate a script from tab delimitted to jsonl for training
 
 ```bash
-python main.py --input samples/blockchair_bitcoin_blocks_20090109.tsv --output output/
+python process_blocks.py --input downloads/blocks/blockchair_bitcoin_blocks_20090109.tsv --output output/
 ```
