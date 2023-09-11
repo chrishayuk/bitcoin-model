@@ -19,7 +19,10 @@ class ConfigManager:
     @property
     def processed_blocks_folder(self):
         return self.default_config.get('processed_blocks_folder', '')
-
-
+    
+    @property
+    def rate_limit_seconds(self):
+        return int(self.default_config.get('rate_limit_seconds', 10))  # default to 10 seconds if not specified
+    
     def get(self, key, default=None):
         return self.default_config.get(key, default)

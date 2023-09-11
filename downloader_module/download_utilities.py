@@ -1,23 +1,33 @@
 import requests
-
-def download_file(url, filepath, stream=False):
-    response = requests.get(url, stream=stream)
-    
-    if response.status_code == 200:
-        if stream:
-            with open(filepath, 'wb') as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-        else:
-            with open(filepath, 'wb') as file:
-                file.write(response.content)
-        return True
-    else:
-        print(f"Failed to download {url}. Status code: {response.status_code}")
-        return False
-
+import logging
+import time
 import gzip
 import os
+
+# Initialize logging for the module
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def download_file(url, filepath, stream=False, max_retries=3):
+    retry_count = 0
+    while retry_count < max_retries:
+        response = requests.get(url, stream=stream)
+        if response.status_code == 200:
+            if stream:
+                with open(filepath, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+            else:
+                with open(filepath, 'wb') as file:
+                    file.write(response.content)
+            return True
+        else:
+            print(f"Failed to download {url}. Status code: {response.status_code}")
+            retry_count += 1
+            time.sleep(2**retry_count)  # Exponential backoff
+
+    print(f"Failed to download {url} after {max_retries} attempts.")
+    return False
+
 
 def decompress_gz_file(gz_filepath, output_filepath=None):
     """

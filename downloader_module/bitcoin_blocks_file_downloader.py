@@ -7,7 +7,7 @@ def construct_filename(date):
     """Construct the filename based on the date."""
     return f"blockchair_bitcoin_blocks_{date.strftime('%Y%m%d')}.tsv.gz"
 
-def download_bitcoin_file_for_date(date, download_path):
+def download_bitcoin_file_for_date(date, download_path, max_retries=10):
     """
     Download the file for the given date.
     Returns True if successful, otherwise False.
@@ -19,8 +19,7 @@ def download_bitcoin_file_for_date(date, download_path):
     full_path = os.path.join(download_path, filename)
 
     # Download the file
-    from .download_utilities import download_file
-    success = download_file(url, full_path, stream=True)
+    success = download_file(url, full_path, stream=True, max_retries=max_retries)
 
     if success:
         # Decompress the .gz file after downloading
