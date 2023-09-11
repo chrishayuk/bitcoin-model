@@ -4,16 +4,12 @@ import random
 
 def extract_tags_from_coinbase(coinbase_hex):
     try:
-        # Convert hex to ASCII
         coinbase_ascii = bytes.fromhex(coinbase_hex).decode('ascii', 'ignore')
-        
-        # Use regex to extract human-readable strings that are longer than, let's say, 5 characters
         tags = re.findall(r"[A-Za-z0-9!@#$%^&*()_+{}:\[\];'<>,.?~\\\-]{5,}", coinbase_ascii)
-        
         return tags
     except Exception as e:
         return []
-    
+
 def process_block(headers, line, previous_block=None):
     included_columns = ["id", "hash", "time", "median_time", "size", "version", "merkle_root", "nonce", 
                         "bits", "difficulty", "chainwork", "coinbase_data_hex","transaction_count", "input_count", 
@@ -27,12 +23,10 @@ def process_block(headers, line, previous_block=None):
     for key in ["reward", "input_total", "output_total", "fee_total", "generation"]:
         block_data[key] = float(block_data[key])
 
-    # Coinbase Data Analysis
     coinbase_tags = extract_tags_from_coinbase(block_data["coinbase_data_hex"])
     if coinbase_tags:
         block_data["coinbase_tags"] = coinbase_tags
 
-    # Add the length of the coinbase data
     block_data["coinbase_length"] = len(block_data["coinbase_data_hex"])
 
     miner_features_dict = miner_features(block_data, previous_block if previous_block else None)
@@ -57,11 +51,15 @@ def generate_description(block, previous_block):
     ]
 
     chosen_description = random.choice(descriptions)
-    if previous_block:
-        time_diff = block['time_diff_seconds']
+    
+    if previous_block and 'id' in previous_block:
+        time_diff = block.get('time_diff_seconds', 0) # Safe access in case 'time_diff_seconds' isn't present
         chosen_description += f" Following block {previous_block['id']}, block {block['id']} was created {time_diff} seconds later."
         
-        chainwork_diff = block['chainwork'] - previous_block['chainwork']
+        prev_chainwork = previous_block.get('chainwork', 0)
+        if isinstance(prev_chainwork, str):
+            prev_chainwork = int(prev_chainwork, 16)
+        chainwork_diff = block['chainwork'] - prev_chainwork # Safe access in case 'chainwork' isn't present in one of the blocks
         chosen_description += f" The computational effort increased by {chainwork_diff} units from block {previous_block['id']} to block {block['id']}."
 
     return chosen_description
@@ -73,17 +71,22 @@ def miner_features(block, previous_block):
     median_time = datetime.strptime(block["median_time"], time_format)
     features["time_diff_seconds"] = (block_time - median_time).seconds
 
-    current_chainwork = block["chainwork"]
     if previous_block:
-        features["chainwork_diff"] = current_chainwork - previous_block["chainwork"]
-        
+        prev_chainwork = previous_block.get("chainwork", 0)
+        if isinstance(prev_chainwork, str):
+            prev_chainwork = int(prev_chainwork, 16)
+        features["chainwork_diff"] = block["chainwork"] - prev_chainwork
+
         # 1. Difference Analysis
-        features["nonce_diff_from_last"] = int(block["nonce"]) - int(previous_block["nonce"])
+        features["nonce_diff_from_last"] = int(block.get("nonce", 0)) - int(previous_block.get("nonce", 0))
         
         # 2. Cycle Patterns
-        features["starts_from_known_reset_value"] = block["nonce"] == '0'
+        features["starts_from_known_reset_value"] = block.get("nonce") == '0'
         
         # 3. Time-based Analysis
-        features["avg_nonce_per_second"] = features["nonce_diff_from_last"] / features["time_diff_seconds"]
+        features["avg_nonce_per_second"] = features["nonce_diff_from_last"] / (features["time_diff_seconds"] or 1) # Avoid division by zero
         
+    else:
+        features["chainwork_diff"] = None
+
     return features

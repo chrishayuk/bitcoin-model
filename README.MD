@@ -8,5 +8,5 @@ python download_blocks.py 20090115
 The following CLI will translate a script from tab delimitted to jsonl for training
 
 ```bash
-python process_blocks.py --input downloads/blocks/blockchair_bitcoin_blocks_20090109.tsv --output output/
+python process_blocks.py 20090121
 ```
