@@ -53,16 +53,27 @@ def generate_description(block, previous_block):
     chosen_description = random.choice(descriptions)
     
     if previous_block and 'id' in previous_block:
-        time_diff = block.get('time_diff_seconds', 0) # Safe access in case 'time_diff_seconds' isn't present
+        time_diff = block.get('time_diff_seconds', 0)
         chosen_description += f" Following block {previous_block['id']}, block {block['id']} was created {time_diff} seconds later."
-        
-        prev_chainwork = previous_block.get('chainwork', 0)
+
+        prev_chainwork = previous_block.get('chainwork', "0")
         if isinstance(prev_chainwork, str):
-            prev_chainwork = int(prev_chainwork, 16)
-        chainwork_diff = block['chainwork'] - prev_chainwork # Safe access in case 'chainwork' isn't present in one of the blocks
+            try:
+                prev_chainwork = int(prev_chainwork, 16)
+            except ValueError:
+                prev_chainwork = 0
+        elif prev_chainwork is None:
+            prev_chainwork = 0
+
+        chainwork_diff = block['chainwork'] - prev_chainwork
         chosen_description += f" The computational effort increased by {chainwork_diff} units from block {previous_block['id']} to block {block['id']}."
 
+        print(f"Current block's chainwork: {block['chainwork']}")
+        print(f"Previous block's chainwork: {prev_chainwork}")
+        print(f"Computed chainwork_diff: {chainwork_diff}")
+
     return chosen_description
+
 
 def miner_features(block, previous_block):
     features = {}
@@ -72,9 +83,15 @@ def miner_features(block, previous_block):
     features["time_diff_seconds"] = (block_time - median_time).seconds
 
     if previous_block:
-        prev_chainwork = previous_block.get("chainwork", 0)
+        prev_chainwork = previous_block.get("chainwork", "0")  # Default to "0" if chainwork is missing
         if isinstance(prev_chainwork, str):
-            prev_chainwork = int(prev_chainwork, 16)
+            try:
+                prev_chainwork = int(prev_chainwork, 16)
+            except ValueError:
+                prev_chainwork = 0  # Set to 0 if conversion fails
+        elif prev_chainwork is None:  # Handle case where chainwork is explicitly set to None
+            prev_chainwork = 0
+
         features["chainwork_diff"] = block["chainwork"] - prev_chainwork
 
         # 1. Difference Analysis
@@ -85,8 +102,8 @@ def miner_features(block, previous_block):
         
         # 3. Time-based Analysis
         features["avg_nonce_per_second"] = features["nonce_diff_from_last"] / (features["time_diff_seconds"] or 1) # Avoid division by zero
-        
     else:
-        features["chainwork_diff"] = None
+        features["chainwork_diff"] = 0  # Assigning 0 when there's no previous block
 
     return features
+

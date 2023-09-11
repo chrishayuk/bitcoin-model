@@ -20,7 +20,7 @@ def get_previous_block(output_folder, current_date_string):
             metadata = json.load(metafile)
             return {
                 'id': metadata.get('end_block'),
-                'chainwork': metadata.get('end_block_hash') # You might need to adjust this if "chainwork" info is stored differently.
+                'chainwork': metadata.get('end_block_chainwork')  # Adjusted the key here
             }
     except FileNotFoundError:
         return None
@@ -48,7 +48,9 @@ def save_metadata(json_data, output_folder, date_string):
         "end_block_time": json_data[-1]['data']['time'] if json_data else None,
         "previous_block_hash": previous_block_hash,
         "start_block_hash": json_data[0]['data']['hash'] if json_data else None,
-        "end_block_hash": json_data[-1]['data']['hash'] if json_data else None
+        "end_block_hash": json_data[-1]['data']['hash'] if json_data else None,
+        "start_block_chainwork": json_data[0]['data']['chainwork'] if json_data else None,  # Added this line
+        "end_block_chainwork": json_data[-1]['data']['chainwork'] if json_data else None   # And this one
     }
 
     with open(metadata_filename, "w") as metafile:
